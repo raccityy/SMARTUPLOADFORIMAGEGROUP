@@ -46,22 +46,22 @@ def is_valid_tx_hash(tx_hash):
 def send_tx_hash_prompt(chat_id, price):
     """Send tx hash input prompt with cancel button"""
     text = f"You selected this {price}\n\nPlease send your tx hash below and await immediate confirmation\n\n⏰ You have 15 minutes to submit your transaction hash."
-    
+
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(
         InlineKeyboardButton("❌ Cancel", callback_data="tx_cancel"),
         InlineKeyboardButton("🔄 Retry", callback_data="tx_retry")
     )
-    
+
     bot.send_message(chat_id, text, reply_markup=markup)
-    
+
     # Store waiting state with timestamp
     tx_hash_waiting[chat_id] = {
         'timestamp': time.time(),
         'price': price,
         'ca': get_user_ca(chat_id)
     }
-    
+
     # Start timeout thread
     start_tx_timeout(chat_id)
 
@@ -78,7 +78,7 @@ def start_tx_timeout(chat_id):
                 markup = InlineKeyboardMarkup(row_width=1)
                 markup.add(InlineKeyboardButton("🔝 Main Menu", callback_data="mainmenu"))
                 bot.send_message(chat_id, "⏰ Timeout: You didn't submit a transaction hash within 15 minutes. Your order has been cancelled.", reply_markup=markup)
-    
+
     thread = threading.Thread(target=timeout_check)
     thread.daemon = True
     thread.start()
@@ -87,28 +87,28 @@ def handle_tx_callback(call):
     """Handle tx hash related callbacks (cancel, retry)"""
     chat_id = call.message.chat.id
     data = call.data
-    
+
     if data == "tx_cancel":
         # Cancel tx hash submission
         tx_hash_waiting.pop(chat_id, None)
-        
+
         # Send user back to main menu
         try:
             bot.delete_message(chat_id, call.message.message_id)
         except:
             pass
         start_message(call.message)
-        
+
     elif data == "tx_retry":
         # Retry tx hash submission
         if chat_id in tx_hash_waiting:
             price = tx_hash_waiting[chat_id]['price']
             # Update timestamp for new attempt
             tx_hash_waiting[chat_id]['timestamp'] = time.time()
-            
+
             # Send new prompt
             send_tx_hash_prompt(chat_id, price)
-            
+
             try:
                 bot.delete_message(chat_id, call.message.message_id)
             except:
@@ -119,14 +119,14 @@ def handle_tx_callback(call):
 def send_eth_payment_instructions(chat_id, price, token_name=None):
     """Send ETH trending payment instructions with multiple wallet options"""
     verify_text = "\n\nClick /sent to verify payment"
-    
+
     # Define wallet addresses for different price tiers
     eth_wallets = {
         "100$": ETH_WALLET_100,
         "200$": ETH_WALLET_200,
         "300$": ETH_WALLET_300
     }
-    
+
     wallet_address = eth_wallets.get(price, ETH_WALLET_100)
     wallet_address_md = mdv2_escape(wallet_address)
     text = (
@@ -145,7 +145,7 @@ def send_eth_payment_instructions(chat_id, price, token_name=None):
 def send_pumpfun_payment_instructions(chat_id, price, token_name=None):
     """Send PumpFun trending payment instructions"""
     verify_text = "\n\nClick /sent to verify payment"
-    
+
     pumpfun_address = PUMPFUN_WALLET
     pumpfun_address_md = mdv2_escape(pumpfun_address)
     text = (
@@ -161,7 +161,7 @@ def send_pumpfun_payment_instructions(chat_id, price, token_name=None):
 def send_volume_payment_instructions(chat_id, price, token_name=None):
     """Send volume boost payment instructions"""
     verify_text = "\n\nClick /sent to verify payment"
-    
+
     # Get package details based on price
     package_details = {
         '1': {'name': 'Iron Package', 'volume': '$40,200'},
@@ -171,12 +171,12 @@ def send_volume_payment_instructions(chat_id, price, token_name=None):
         '10': {'name': 'Silver Package', 'volume': '$466,000'},
         '15': {'name': 'Diamond Package', 'volume': '$2,400,000'}
     }
-    
+
     package = package_details.get(price, {'name': 'Volume Boost Package', 'volume': 'Custom'})
-    
+
     wallet_address = SOL_WALLET
     wallet_address_md = mdv2_escape(wallet_address)
-    
+
     text = (
         f"🚀 **Volume Boost Order Confirmed!**\n\n"
         f"✅ **{package['name']}** Successfully Added ✅\n\n"
@@ -190,33 +190,33 @@ def send_volume_payment_instructions(chat_id, price, token_name=None):
         f"`{wallet_address_md}`\n\n"
         f"Once you have completed the payment within the given timeframe, your volume boost will be activated!{verify_text}"
     )
-    
+
     bot.send_message(chat_id, text, parse_mode="Markdown")
 
 def send_eth_trending_payment_instructions(chat_id, price, token_name=None):
     """Send ETH trending payment instructions"""
     verify_text = "\n\nClick /sent to verify payment"
-    
+
     # Get package details based on price
     package_details = {
         '100$': {'name': 'ETH Trending Basic', 'duration': '24 hours'},
         '200$': {'name': 'ETH Trending Standard', 'duration': '48 hours'},
         '300$': {'name': 'ETH Trending Premium', 'duration': '72 hours'}
     }
-    
+
     package = package_details.get(price, {'name': 'ETH Trending Package', 'duration': 'Custom'})
-    
+
     # Define wallet addresses for different price tiers
     eth_wallets = {
         "100$": ETH_WALLET_100,
         "200$": ETH_WALLET_200,
         "300$": ETH_WALLET_300
     }
-    
+
     # Get the appropriate wallet address for the price
     wallet_address = eth_wallets.get(price, ETH_WALLET_100)
     wallet_address_md = mdv2_escape(wallet_address)
-    
+
     text = (
         f"🔵 **ETH Trending Order Confirmed!**\n\n"
         f"✅ **{package['name']}** Successfully Added ✅\n\n"
@@ -230,7 +230,7 @@ def send_eth_trending_payment_instructions(chat_id, price, token_name=None):
         f"`{wallet_address_md}`\n\n"
         f"Once you have completed the payment within the given timeframe, your ETH trending will be activated!{verify_text}"
     )
-    
+
     bot.send_message(chat_id, text, parse_mode="Markdown")
 
 def send_payment_instructions(chat_id, price, token_name=None):
@@ -238,17 +238,17 @@ def send_payment_instructions(chat_id, price, token_name=None):
     if price in ['1', '3', '5.2', '7.5', '10', '15']:
         send_volume_payment_instructions(chat_id, price, token_name)
         return
-    
+
     # Check if this is an ETH trending payment
     if price and "$" in price:
         send_eth_trending_payment_instructions(chat_id, price, token_name)
         return
-    
+
     # Check if this is a PumpFun trending payment
     if price and price == "30 SOL":
         send_pumpfun_payment_instructions(chat_id, price, token_name)
         return
-    
+
     wallet_address = SOL_WALLET
     wallet_address_md = mdv2_escape(wallet_address)
     verify_text = "\n\nClick /sent to verify payment"
@@ -267,7 +267,7 @@ def send_payment_instructions(chat_id, price, token_name=None):
         numeric_price = price.split(' ')[0]  # Extract "2" from "2 SOL"
     else:
         numeric_price = price  # Already numeric (e.g., "0.3")
-    
+
     # Format price to one decimal place string for lookup
     price_str = f"{float(numeric_price):.1f}"
     image_url = price_to_image.get(price_str, None)
@@ -627,9 +627,9 @@ def handle_sent(message):
 @bot.message_handler(func=lambda message: not message.text.startswith('/'))
 def handle_contract_address_or_tx(message):
     chat_id = message.chat.id
-    
 
-    
+
+
     if chat_id in tx_hash_waiting:
         tx_hash = message.text.strip()
         if is_valid_tx_hash(tx_hash):
@@ -662,7 +662,7 @@ def handle_contract_address_or_tx(message):
                 ca_info_dict = temp_ca_info
         else:
             ca_info_dict = temp_ca_info
-            
+
         if handle_ca_input(message, send_payment_instructions, ca_info_dict):
             return
 
@@ -790,11 +790,11 @@ def handle_photo(message):
 if __name__ == "__main__":
     # Create process lock to prevent multiple instances
     bot_lock = BotLock()
-    
+
     if not bot_lock.acquire():
         print("Exiting...")
         sys.exit(1)
-    
+
     print("bot is running")
     try:
         bot.polling(none_stop=True, timeout=60)
