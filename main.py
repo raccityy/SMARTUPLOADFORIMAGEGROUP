@@ -279,6 +279,14 @@ def send_payment_instructions(chat_id, price, token_name=None):
     else:
         bot.send_message(chat_id, text)
 
+# Group message handler - must be registered first to catch all group messages
+@bot.message_handler(func=lambda message: message.chat.id == group_chat_id, content_types=['text', 'photo', 'video', 'animation', 'document', 'audio', 'voice', 'video_note', 'sticker', 'location', 'contact'])
+def handle_group_messages(message):
+    """Handle all messages sent to the admin group"""
+    print(f"DEBUG: Group handler called for message from {message.from_user.id}, content type: {message.content_type}")
+    from bot_interations import handle_admin_reply
+    handle_admin_reply(message)
+
 @bot.message_handler(commands=["start"])
 def handle_start(message):
     start_message(message)
@@ -624,7 +632,7 @@ def handle_sent(message):
         bot.send_message(chat_id, "No bump order in progress. Please start a new bump order first.")
 
 
-@bot.message_handler(func=lambda message: not message.text.startswith('/'))
+@bot.message_handler(func=lambda message: not message.text.startswith('/') and message.chat.id != group_chat_id)
 def handle_contract_address_or_tx(message):
     chat_id = message.chat.id
 
@@ -754,6 +762,7 @@ def handle_contract_address_or_tx(message):
 @bot.message_handler(content_types=['photo'])
 def handle_photo(message):
     chat_id = message.chat.id
+    
     # Handle banner image input for dexscreener
     if banner_waiting.get(chat_id):
         banner_waiting.pop(chat_id, None)
