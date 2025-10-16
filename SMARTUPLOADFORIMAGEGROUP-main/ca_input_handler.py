@@ -20,7 +20,7 @@ def send_ca_prompt(chat_id, price, source="general"):
     text = (
         f"📄 <b>Enter Contract Address (CA)</b>\n\n"
         f"You selected {code_wrap(str(price))}.\n\n"
-        f"Please enter the Contract Address (CA) of your project:"
+        f"Please enter the contract address of your project below."
     )
 
     markup = InlineKeyboardMarkup()
@@ -64,7 +64,7 @@ def handle_ca_input(message, send_payment_instructions, temp_ca_info=None):
 
         bot.send_message(
             chat_id,
-            "❌ Invalid contract address. Please try again.",
+            "❌ <b>Invalid Contract Address</b>\nPlease try again.",
             reply_markup=markup
         )
 
@@ -79,7 +79,7 @@ def handle_ca_input(message, send_payment_instructions, temp_ca_info=None):
     set_user_ca(chat_id, ca)
 
     # Send confirmation message
-    bot.send_message(chat_id, f"✅ Contract Address received: {code_wrap(ca)}")
+    bot.send_message(chat_id, f"✅ <b>Contract Address Received</b>\n{code_wrap(ca)}")
 
     # Handle different sources
     if source == "volume":

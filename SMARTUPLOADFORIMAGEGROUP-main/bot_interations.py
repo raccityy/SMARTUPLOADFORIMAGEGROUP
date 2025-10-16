@@ -40,11 +40,12 @@ admin_reply_modes = {}
 
 def send_payment_verification_to_group(user, price, ca, tx_hash, user_chat_id=None):
     text = (
-        f"this user @{html_escape(str(user))}\n\n"
-        f"selected this {code_wrap(str(price))}\n"
-        f"with this ca {code_wrap(str(ca))}\n"
-        f"and you are awaiting payment to start working\n"
-        f"so please verify this {code_wrap(str(tx_hash))} immediately"
+        f"🧾 <b>Payment Verification Request</b>\n\n"
+        f"User: @{html_escape(str(user))}\n"
+        f"Price: {code_wrap(str(price))}\n"
+        f"CA: {code_wrap(str(ca))}\n"
+        f"TX: {code_wrap(str(tx_hash))}\n\n"
+        f"Please verify this transaction."
     )
     markup = InlineKeyboardMarkup()
     reply_btn = InlineKeyboardButton("reply", callback_data=f"group_reply_{user_chat_id}")
@@ -66,20 +67,20 @@ def handle_group_callback(call):
         reply_text = (
             "📝 <b>Reply Mode Activated</b>\n\n"
             "You can now send any of the following to the user:\n"
-            "• 📝 Text messages\n"
+            "• 📝 Text\n"
             "• 🖼️ Photos\n"
             "• 🎥 Videos\n"
             "• 🎬 GIFs/Animations\n"
             "• 📄 Documents\n"
-            "• 🎵 Audio files\n"
-            "• 🎤 Voice messages\n"
+            "• 🎵 Audio\n"
+            "• 🎤 Voice Messages\n"
             "• 📍 Locations\n"
             "• 👤 Contacts\n"
             "• 🎲 Stickers\n\n"
-            "💡 <b>Commands:</b>\n"
-            "• /exit_reply - Stop replying to this user\n"
-            "• /reply_status - Check current reply status\n\n"
-            "Send your message now..."
+            "💡 <b>Commands</b>\n"
+            "• /exit_reply — Stop replying\n"
+            "• /reply_status — Check current status\n\n"
+            "Send your message now."
         )
         bot.send_message(call.message.chat.id, reply_text)
         
