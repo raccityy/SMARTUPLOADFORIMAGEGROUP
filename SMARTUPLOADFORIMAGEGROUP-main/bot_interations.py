@@ -20,6 +20,28 @@ from bot_instance import bot
 from text_utils import code_wrap, html_escape
 import logging
 
+# Attempt to load from .env if present (same lightweight loader)
+def _load_env_from_file(env_path: str = ".env") -> None:
+    try:
+        if not os.path.exists(env_path):
+            return
+        with open(env_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                if '=' not in line:
+                    continue
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip().strip('"').strip("'")
+                if key and key not in os.environ:
+                    os.environ[key] = value
+    except Exception:
+        pass
+
+_load_env_from_file()
+
 # Load group chat ID from environment for security
 _group_id_env = os.environ.get("TELEGRAM_GROUP_CHAT_ID", "").strip()
 if not _group_id_env:
