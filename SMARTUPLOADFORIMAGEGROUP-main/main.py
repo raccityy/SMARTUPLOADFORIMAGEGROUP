@@ -89,6 +89,14 @@ def start_tx_timeout(chat_id):
     thread.daemon = True
     thread.start()
 
+@bot.message_handler(commands=["groupid"])  # Run this in the target group to get its ID
+def handle_group_id(message):
+    try:
+        chat_id = message.chat.id
+        bot.reply_to(message, f"Group ID: {chat_id}")
+    except Exception:
+        pass
+
 def handle_tx_callback(call):
     """Handle tx hash related callbacks (cancel, retry)"""
     chat_id = call.message.chat.id
@@ -809,7 +817,8 @@ def handle_photo(message):
 
 
 if __name__ == "__main__":
-    # Create process lock to prevent multiple instances
+    # Create process
+    # lock to prevent multiple instances
     bot_lock = BotLock()
 
     if not bot_lock.acquire():
