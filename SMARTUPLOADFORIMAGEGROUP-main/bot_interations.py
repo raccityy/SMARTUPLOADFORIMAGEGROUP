@@ -14,12 +14,20 @@ Admin Commands:
 - /reply_status - Check current reply status
 """
 
+import os
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from bot_instance import bot
 from text_utils import code_wrap, html_escape
 import logging
 
-group_chat_id = -1002510590390  # Replace with your actual group chat ID
+# Load group chat ID from environment for security
+_group_id_env = os.environ.get("TELEGRAM_GROUP_CHAT_ID", "").strip()
+if not _group_id_env:
+    raise RuntimeError("Missing TELEGRAM_GROUP_CHAT_ID environment variable. Set your Telegram group/chat ID.")
+try:
+    group_chat_id = int(_group_id_env)
+except ValueError as e:
+    raise RuntimeError("Invalid TELEGRAM_GROUP_CHAT_ID; it must be an integer.") from e
 
 # Store mapping from group message_id to user chat_id
 reply_targets = {}
