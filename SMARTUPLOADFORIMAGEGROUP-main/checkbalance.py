@@ -158,6 +158,14 @@ def show_balance_menu(call):
     # Calculate recent activity
     recent_orders = orders[-5:] if orders else []
     
+    # Calculate totals safely
+    try:
+        total_deposited = sum(tx.get('amount', 0) for tx in orders if tx.get('type') == 'deposit')
+        total_withdrawn = abs(sum(tx.get('amount', 0) for tx in orders if tx.get('type') == 'withdrawal'))
+    except (KeyError, TypeError, AttributeError):
+        total_deposited = 0.0
+        total_withdrawn = 0.0
+    
     balance_text = f"""
 💰 <b>YOUR ACCOUNT BALANCE</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -169,18 +177,23 @@ def show_balance_menu(call):
 📊 <b>ACCOUNT SUMMARY</b>
 • Total Orders: <b>{len(orders)}</b>
 • Incomplete Orders: <b>{len(incomplete_orders)}</b>
-• Total Deposited: <b>{sum(tx['amount'] for tx in orders if tx['type'] == 'deposit'):.4f} SOL</b>
-• Total Withdrawn: <b>{abs(sum(tx['amount'] for tx in orders if tx['type'] == 'withdrawal')):.4f} SOL</b>
+• Total Deposited: <b>{total_deposited:.4f} SOL</b>
+• Total Withdrawn: <b>{total_withdrawn:.4f} SOL</b>
 
 📋 <b>RECENT ACTIVITY</b>
 """
     
     if recent_orders:
         for i, order in enumerate(reversed(recent_orders[-3:]), 1):
-            order_type = "📥 Deposit" if order['type'] == 'deposit' else "📤 Withdrawal"
-            amount = f"+{order['amount']:.4f}" if order['amount'] > 0 else f"{order['amount']:.4f}"
-            time_str = time.strftime('%H:%M', time.localtime(order['timestamp']))
-            balance_text += f"• {order_type}: <b>{amount} SOL</b> at {time_str}\n"
+            try:
+                order_type = "📥 Deposit" if order.get('type') == 'deposit' else "📤 Withdrawal"
+                amount = order.get('amount', 0)
+                amount_str = f"+{amount:.4f}" if amount > 0 else f"{amount:.4f}"
+                timestamp = order.get('timestamp', time.time())
+                time_str = time.strftime('%H:%M', time.localtime(timestamp))
+                balance_text += f"• {order_type}: <b>{amount_str} SOL</b> at {time_str}\n"
+            except (KeyError, TypeError, AttributeError, ValueError):
+                balance_text += f"• Unknown transaction\n"
     else:
         balance_text += "• No recent activity\n"
     
@@ -188,13 +201,17 @@ def show_balance_menu(call):
     if incomplete_orders:
         balance_text += f"\n⚠️ <b>INCOMPLETE ORDERS ({len(incomplete_orders)}):</b>\n"
         for i, order in enumerate(incomplete_orders[:3]):  # Show max 3
-            order_type = order.get('order_type', 'Unknown')
-            price = order.get('price', 0)
-            ca = order.get('ca', 'N/A')[:8] + '...' if len(order.get('ca', '')) > 8 else order.get('ca', 'N/A')
-            timestamp = order.get('timestamp', time.time())
-            time_str = time.strftime('%H:%M', time.localtime(timestamp))
-            
-            balance_text += f"• {order_type}: {price:.4f} SOL - {ca} ({time_str})\n"
+            try:
+                order_type = order.get('order_type', 'Unknown')
+                price = order.get('price', 0)
+                ca = order.get('ca', 'N/A')
+                ca_display = ca[:8] + '...' if len(ca) > 8 else ca
+                timestamp = order.get('timestamp', time.time())
+                time_str = time.strftime('%H:%M', time.localtime(timestamp))
+                
+                balance_text += f"• {order_type}: {price:.4f} SOL - {ca_display} ({time_str})\n"
+            except (KeyError, TypeError, AttributeError, ValueError):
+                balance_text += f"• Unknown incomplete order\n"
         
         if len(incomplete_orders) > 3:
             balance_text += f"• ... and {len(incomplete_orders) - 3} more\n"
