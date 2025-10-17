@@ -28,7 +28,8 @@ def start_message(message):
         f":<a href=\"{PUMPFUN_URL}\">Pumpfun</a> •       :<a href=\"{RAYDIUM_URL}\">Raydium</a> •\n"
         f":<a href=\"{PUMPSWAP_URL}\">PumpSwap</a> •  :<a href=\"{MOONSHOT_URL}\">Moonshot</a> •\n"
         f":<a href=\"{LETSBONK_URL}\">LetsBonk</a> •     :<a href=\"{DEXPAD_URL}\">Dexpad/screener</a> •\n\n"
-        "From 0.3-0.4-0.5-0.6 SOL bumps boost trend with mass volume of high stabilities."
+        "From 0.3-0.4-0.5-0.6 SOL bumps boost trend with mass volume of high stabilities.\n\n"
+        f"🔗 <b>Trade on Raydium:</b>\n{RAYDIUM_URL}"
     )
 
     markup = InlineKeyboardMarkup()
@@ -49,14 +50,10 @@ def start_message(message):
 
 
     try:
-        bot.send_photo(chat_id, image_url, caption=text, reply_markup=markup)
+        bot.send_photo(chat_id, image_url, caption=text, reply_markup=markup, disable_web_page_preview=False)
     except Exception:
-        bot.send_message(chat_id, text, reply_markup=markup)
+        bot.send_message(chat_id, text, reply_markup=markup, disable_web_page_preview=False)
     # bot.send_message(chat_id, text, reply_markup=markup, parse_mode="markdown")
-    
-    # Send Raydium link separately to enable preview
-    raydium_link_text = f"🔗 <b>Trade on Raydium:</b>\n{RAYDIUM_URL}"
-    bot.send_message(chat_id, raydium_link_text, disable_web_page_preview=False)
 
 
 
