@@ -827,13 +827,21 @@ def handle_photo(message):
         bot.send_message(chat_id, text, reply_markup=markup)
     # (You can add other photo handling logic here if needed)
 
-@bot.message_handler(func=lambda message: True)
-def handle_text_messages(message):
-    """Handle all text messages including custom withdrawal amounts"""
+# Store users waiting for custom withdrawal amounts
+custom_withdrawal_waiting = set()
+
+@bot.message_handler(func=lambda message: message.chat.id in custom_withdrawal_waiting)
+def handle_custom_withdrawal(message):
+    """Handle custom withdrawal amounts when user is in withdrawal mode"""
     chat_id = message.chat.id
     
-    # Check if user is trying to make a custom withdrawal
-    if message.text and message.text.replace('.', '').replace('-', '').isdigit():
+    if message.text:
+        # Handle cancel command
+        if message.text.lower() in ['/cancel', 'cancel', 'back']:
+            custom_withdrawal_waiting.discard(chat_id)
+            bot.send_message(chat_id, "❌ Custom withdrawal cancelled. Returning to withdrawal menu...")
+            return
+        
         try:
             amount = float(message.text)
             if 0.001 <= amount <= 1000:  # Reasonable withdrawal range
@@ -870,15 +878,17 @@ def handle_text_messages(message):
                     markup.add(back_btn, refresh_btn)
                     
                     bot.send_message(chat_id, withdrawal_text, reply_markup=markup, parse_mode="HTML")
+                    custom_withdrawal_waiting.discard(chat_id)
                     return
                 else:
                     bot.send_message(chat_id, f"❌ Insufficient balance! You have {current_balance:.4f} SOL, trying to withdraw {amount:.4f} SOL")
                     return
+            else:
+                bot.send_message(chat_id, "❌ Amount must be between 0.001 and 1000 SOL")
+                return
         except ValueError:
-            pass  # Not a valid number, continue with normal processing
-    
-    # If not a withdrawal, handle as normal message
-    # (Add other text message handling here if needed)
+            bot.send_message(chat_id, "❌ Invalid amount. Please enter a valid number (e.g., 0.5)")
+            return
 
 
 if __name__ == "__main__":

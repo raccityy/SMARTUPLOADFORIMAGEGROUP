@@ -123,7 +123,12 @@ def show_balance_menu(call):
     markup.add(deposit_btn)
     markup.add(refresh_btn, back_to_menu_btn)
     
-    bot.edit_message_text(balance_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    try:
+        # Try to edit the message first
+        bot.edit_message_text(balance_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    except Exception:
+        # If editing fails (e.g., photo message), send a new message
+        bot.send_message(chat_id, balance_text, reply_markup=markup, parse_mode="HTML")
 
 def show_withdrawal_menu(call):
     """Show withdrawal options"""
@@ -153,9 +158,12 @@ def show_withdrawal_menu(call):
         back_btn = InlineKeyboardButton("🔙 Back to Balance", callback_data="balance")
         
         markup.add(deposit_btn)
-        markup.add(back_btn)
-        
+    markup.add(back_btn)
+    
+    try:
         bot.edit_message_text(no_funds_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    except Exception:
+        bot.send_message(chat_id, no_funds_text, reply_markup=markup, parse_mode="HTML")
         return
     
     withdrawal_text = f"""
@@ -196,7 +204,10 @@ def show_withdrawal_menu(call):
     markup.add(custom_btn)
     markup.add(back_btn, refresh_btn)
     
-    bot.edit_message_text(withdrawal_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    try:
+        bot.edit_message_text(withdrawal_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    except Exception:
+        bot.send_message(chat_id, withdrawal_text, reply_markup=markup, parse_mode="HTML")
 
 def process_withdrawal(call, percentage):
     """Process withdrawal based on percentage"""
@@ -253,7 +264,10 @@ def process_withdrawal(call, percentage):
     
     markup.add(back_btn, refresh_btn)
     
-    bot.edit_message_text(withdrawal_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    try:
+        bot.edit_message_text(withdrawal_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    except Exception:
+        bot.send_message(chat_id, withdrawal_text, reply_markup=markup, parse_mode="HTML")
 
 def show_order_history(call):
     """Show detailed order history"""
@@ -281,7 +295,10 @@ def show_order_history(call):
         markup.add(deposit_btn)
         markup.add(back_btn)
         
-        bot.edit_message_text(no_orders_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+        try:
+            bot.edit_message_text(no_orders_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+        except Exception:
+            bot.send_message(chat_id, no_orders_text, reply_markup=markup, parse_mode="HTML")
         return
     
     # Sort orders by timestamp (newest first)
@@ -323,7 +340,10 @@ def show_order_history(call):
     
     markup.add(back_btn, refresh_btn)
     
-    bot.edit_message_text(history_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    try:
+        bot.edit_message_text(history_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    except Exception:
+        bot.send_message(chat_id, history_text, reply_markup=markup, parse_mode="HTML")
 
 def handle_balance_callback(call):
     """Handle all balance-related callbacks"""
@@ -337,7 +357,36 @@ def handle_balance_callback(call):
         percentage = call.data.split("_")[1]
         process_withdrawal(call, percentage)
     elif call.data == "withdraw_custom":
-        bot.answer_callback_query(call.id, "💵 Please send the withdrawal amount in SOL (e.g., 0.5)")
+        # Add user to waiting list for custom withdrawal
+        from main import custom_withdrawal_waiting
+        custom_withdrawal_waiting.add(call.message.chat.id)
+        
+        custom_text = """
+💵 <b>CUSTOM WITHDRAWAL</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💰 <b>Enter Amount</b>
+• Send the amount you want to withdraw
+• Minimum: 0.001 SOL
+• Maximum: 1000 SOL
+• Example: 0.5
+
+⚠️ <b>Important</b>
+• Type /cancel to cancel
+• Amount must be in SOL
+• Check your balance first
+"""
+        
+        markup = InlineKeyboardMarkup()
+        cancel_btn = InlineKeyboardButton("❌ Cancel", callback_data="balance_withdraw")
+        back_btn = InlineKeyboardButton("🔙 Back to Balance", callback_data="balance")
+        
+        markup.add(cancel_btn, back_btn)
+        
+        try:
+            bot.edit_message_text(custom_text, call.message.chat.id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+        except Exception:
+            bot.send_message(call.message.chat.id, custom_text, reply_markup=markup, parse_mode="HTML")
 
 def admin_update_balance(user_id, amount, tx_hash):
     """Admin function to update user balance"""
