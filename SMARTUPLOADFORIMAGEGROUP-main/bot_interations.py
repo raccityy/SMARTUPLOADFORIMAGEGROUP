@@ -142,6 +142,8 @@ def handle_group_callback(call):
         
         # Store admin in balance update mode
         admin_reply_state[call.from_user.id] = f"balance_update_{user_chat_id}"
+        print(f"DEBUG: Added admin {call.from_user.id} to balance update mode for user {user_chat_id}")
+        print(f"DEBUG: admin_reply_state after adding: {admin_reply_state}")
         
         bot.send_message(call.message.chat.id, balance_text, parse_mode="HTML")
 
@@ -174,9 +176,14 @@ def handle_admin_reply(message):
                 bot.send_message(message.chat.id, "❌ Not currently in reply mode")
             return
     
-    # Handle balance update mode
+    # Handle balance update mode FIRST (before single reply mode)
+    print(f"DEBUG: Checking balance update mode for admin {admin_id}")
+    print(f"DEBUG: admin_reply_state: {admin_reply_state}")
+    print(f"DEBUG: admin_id in admin_reply_state: {admin_id in admin_reply_state}")
+    
     if admin_id in admin_reply_state and admin_reply_state[admin_id].startswith("balance_update_"):
         user_chat_id = admin_reply_state[admin_id].split("balance_update_")[1]
+        print(f"DEBUG: Processing balance update for user {user_chat_id}")
         
         if message.text:
             try:
@@ -217,6 +224,7 @@ def handle_admin_reply(message):
                         
                         # Clear balance update mode
                         admin_reply_state.pop(admin_id)
+                        return  # Important: return here to prevent other handlers from running
                     else:
                         bot.send_message(message.chat.id, 
                             "❌ <b>Invalid Format!</b>\n\n"
@@ -226,6 +234,7 @@ def handle_admin_reply(message):
                             "Example: <code>+0.5</code> or <code>-1.2</code>",
                             parse_mode="HTML"
                         )
+                        return
                 else:
                     bot.send_message(message.chat.id, 
                         "❌ <b>Invalid Format!</b>\n\n"
@@ -235,6 +244,7 @@ def handle_admin_reply(message):
                         "Example: <code>+0.5</code> or <code>-1.2</code>",
                         parse_mode="HTML"
                     )
+                    return
             except ValueError:
                 bot.send_message(message.chat.id, 
                     "❌ <b>Invalid Amount!</b>\n\n"
@@ -244,9 +254,9 @@ def handle_admin_reply(message):
                     "Example: <code>+0.5</code> or <code>-1.2</code>",
                     parse_mode="HTML"
                 )
-        return
+                return
     
-    # Handle single reply mode (one-time reply)
+    # Handle single reply mode (one-time reply) - only if not in balance update mode
     if admin_id in admin_reply_state and admin_id not in admin_reply_modes:
         user_chat_id = admin_reply_state.pop(admin_id)
         

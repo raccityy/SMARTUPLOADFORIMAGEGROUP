@@ -538,6 +538,12 @@ def handle_callbacks(call):
         if call.data == "deposit_add":
             bot.answer_callback_query(call.id)
             deposit_address = code_wrap(SOL_WALLET)
+            
+            # Create an incomplete order for deposit tracking
+            from checkbalance import add_incomplete_order
+            import time
+            add_incomplete_order(call.message.chat.id, "deposit", 0.20, time.time())
+            
             text = (
                 "💳 <b>wallet generated</b>\n\n"
                 "make a minimum deposit of <b>0.20 sol</b> to the address below:\n\n"
