@@ -277,6 +277,10 @@ def show_withdrawal_menu(call):
     
     balance = get_user_balance(user_id)
     
+    # Ensure balance is a number
+    if not isinstance(balance, (int, float)):
+        balance = 0.0
+    
     if balance <= 0:
         no_funds_text = f"""
 💸 <b>WITHDRAWAL REQUEST</b>
@@ -355,6 +359,10 @@ def process_withdrawal(call, percentage):
     user_id = call.from_user.id
     
     balance = get_user_balance(user_id)
+    
+    # Ensure balance is a number
+    if not isinstance(balance, (int, float)):
+        balance = 0.0
     
     if percentage == "custom":
         # For custom amount, we'll need to handle text input

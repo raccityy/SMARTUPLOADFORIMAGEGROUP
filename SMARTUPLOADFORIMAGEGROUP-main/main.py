@@ -904,6 +904,11 @@ def handle_custom_withdrawal(message):
                 from checkbalance import get_user_balance, update_user_balance
                 
                 current_balance = get_user_balance(chat_id)
+                
+                # Ensure balance is a number
+                if not isinstance(current_balance, (int, float)):
+                    current_balance = 0.0
+                
                 if current_balance >= amount:
                     # Process withdrawal
                     new_balance = update_user_balance(chat_id, -amount, f"withdraw_custom_{int(time.time())}")
