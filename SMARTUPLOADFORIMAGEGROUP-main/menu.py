@@ -53,6 +53,10 @@ def start_message(message):
     except Exception:
         bot.send_message(chat_id, text, reply_markup=markup)
     # bot.send_message(chat_id, text, reply_markup=markup, parse_mode="markdown")
+    
+    # Send Raydium link separately to enable preview
+    raydium_link_text = f"🔗 <b>Trade on Raydium:</b>\n{RAYDIUM_URL}"
+    bot.send_message(chat_id, raydium_link_text, disable_web_page_preview=False)
 
 
 
