@@ -17,6 +17,7 @@ from dexscreener import handle_dexscreener, handle_dexscreener_trend, banner_wai
 from wallets import SOL_WALLET, ETH_WALLET_100, ETH_WALLET_200, ETH_WALLET_300, PUMPFUN_WALLET, DEFAULT_WALLET
 from ca_input_handler import handle_ca_input, handle_ca_callback, is_user_waiting_for_ca, send_ca_prompt
 from bot_lock import BotLock
+from stats import handle_stats_callback
 # import telebot
 # print(telebot.__version__)
 import re
@@ -348,6 +349,11 @@ def handle_callbacks(call):
 
     if call.data == "volume":
         handle_volume(call)
+        return
+
+    # Handle stats callbacks
+    if call.data.startswith("stats"):
+        handle_stats_callback(call)
         return
 
     # Handle volume package buttons
