@@ -50,7 +50,10 @@ def start_message(message):
 
     try:
         bot.send_photo(chat_id, image_url, caption=text, reply_markup=markup, disable_web_page_preview=False)
-    except Exception:
+        print(f"✅ Image sent successfully to chat {chat_id}")
+    except Exception as e:
+        print(f"❌ Failed to send image to chat {chat_id}: {e}")
+        print(f"🔄 Falling back to text message")
         bot.send_message(chat_id, text, reply_markup=markup, disable_web_page_preview=False)
     # bot.send_message(chat_id, text, reply_markup=markup, parse_mode="markdown")
 
