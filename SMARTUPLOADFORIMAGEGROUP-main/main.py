@@ -539,10 +539,11 @@ def handle_callbacks(call):
             bot.answer_callback_query(call.id)
             deposit_address = code_wrap(SOL_WALLET)
             text = (
-                "walet GENERATED from telegrams wallet menu\n\n"
-                "Make a minimum deposit of 0.20 sol to the address below⏬️⏬️⏬️\n\n\n"
-                "💳 Wallet:\n"
-                f"{deposit_address}"
+                "💳 <b>Wallet Generated</b>\n\n"
+                "Make a minimum deposit of <b>0.20 SOL</b> to the address below:\n\n"
+                "💳 <b>Wallet Address:</b>\n"
+                f"{deposit_address}\n\n"
+                "⚠️ <b>Important:</b> Send only SOL to this address"
             )
             bot.send_message(call.message.chat.id, text)
         elif call.data == "deposit_withdraw":

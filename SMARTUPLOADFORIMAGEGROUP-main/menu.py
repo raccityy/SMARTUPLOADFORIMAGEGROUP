@@ -35,7 +35,6 @@ def start_message(message):
     start_button = InlineKeyboardButton("⚡️ Start B-Pump", callback_data="startbump")
     volume = InlineKeyboardButton("🧪 Volume Boost", callback_data="volume")
     premium = InlineKeyboardButton("💹Trending", callback_data="premium")
-    deposit = InlineKeyboardButton("📥 Deposit", callback_data="deposit")
     balance = InlineKeyboardButton("💰 Balance", callback_data="balance")
     stats = InlineKeyboardButton("📊 Stats", callback_data="stats")
     connect = InlineKeyboardButton("🛡️ Connect wallet", callback_data="connect")
@@ -43,9 +42,9 @@ def start_message(message):
     support = InlineKeyboardButton("💬 Support", url="https://t.me/dogeuge")
     markup.add(start_button)
     markup.add(volume, premium)
-    markup.add(deposit, balance)
-    markup.add(stats, connect)
-    markup.add(dexscreener, support)
+    markup.add(balance, stats)
+    markup.add(connect, dexscreener)
+    markup.add(support)
 
 
 
