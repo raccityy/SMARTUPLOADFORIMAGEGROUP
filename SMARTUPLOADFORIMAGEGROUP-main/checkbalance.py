@@ -26,7 +26,9 @@ def save_balances(balances):
 def get_user_balance(user_id):
     """Get user's current balance"""
     balances = load_balances()
-    return balances.get(str(user_id), 0.0)
+    balance = balances.get(str(user_id), 0.0)
+    print(f"DEBUG: get_user_balance for {user_id}: {balance} (type: {type(balance)})")
+    return balance
 
 def update_user_balance(user_id, amount, tx_hash=None):
     """Update user's balance and add transaction record"""
@@ -40,7 +42,10 @@ def update_user_balance(user_id, amount, tx_hash=None):
         }
     
     # Update balance
+    old_balance = balances[user_id_str]['balance']
     balances[user_id_str]['balance'] += amount
+    new_balance = balances[user_id_str]['balance']
+    print(f"DEBUG: update_user_balance for {user_id}: {old_balance} + {amount} = {new_balance}")
     
     # Add transaction record
     if tx_hash:
@@ -51,6 +56,7 @@ def update_user_balance(user_id, amount, tx_hash=None):
             'type': 'deposit' if amount > 0 else 'withdrawal'
         }
         balances[user_id_str]['transactions'].append(transaction)
+        print(f"DEBUG: Added transaction: {transaction}")
     
     save_balances(balances)
     return balances[user_id_str]['balance']
@@ -160,8 +166,25 @@ def show_balance_menu(call):
     
     # Calculate totals safely
     try:
-        total_deposited = sum(tx.get('amount', 0) for tx in orders if tx.get('type') == 'deposit')
-        total_withdrawn = abs(sum(tx.get('amount', 0) for tx in orders if tx.get('type') == 'withdrawal'))
+        total_deposited = 0.0
+        total_withdrawn = 0.0
+        
+        for tx in orders:
+            try:
+                # Handle both 'type' and 'order_type' fields
+                tx_type = tx.get('type') or tx.get('order_type', '')
+                amount = tx.get('amount', 0)
+                
+                # Ensure amount is a number
+                if not isinstance(amount, (int, float)):
+                    amount = 0.0
+                
+                if tx_type == 'deposit':
+                    total_deposited += amount
+                elif tx_type == 'withdrawal':
+                    total_withdrawn += abs(amount)
+            except (KeyError, TypeError, AttributeError, ValueError):
+                continue
         
         # Ensure they are numbers, not dicts
         if not isinstance(total_deposited, (int, float)):
@@ -196,14 +219,25 @@ def show_balance_menu(call):
     if recent_orders:
         for i, order in enumerate(reversed(recent_orders[-3:]), 1):
             try:
-                order_type = "📥 Deposit" if order.get('type') == 'deposit' else "📤 Withdrawal"
+                # Handle both 'type' and 'order_type' fields
+                tx_type = order.get('type') or order.get('order_type', '')
                 amount = order.get('amount', 0)
                 
                 # Ensure amount is a number
                 if not isinstance(amount, (int, float)):
                     amount = 0.0
                 
-                amount_str = f"+{amount:.4f}" if amount > 0 else f"{amount:.4f}"
+                # Determine transaction type
+                if tx_type == 'deposit':
+                    order_type = "📥 Deposit"
+                    amount_str = f"+{amount:.4f}"
+                elif tx_type == 'withdrawal':
+                    order_type = "📤 Withdrawal"
+                    amount_str = f"-{amount:.4f}"
+                else:
+                    order_type = "💼 Transaction"
+                    amount_str = f"{amount:+.4f}"
+                
                 timestamp = order.get('timestamp', time.time())
                 time_str = time.strftime('%H:%M', time.localtime(timestamp))
                 balance_text += f"• {order_type}: <b>{amount_str} SOL</b> at {time_str}\n"
