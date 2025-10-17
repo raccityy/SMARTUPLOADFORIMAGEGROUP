@@ -28,8 +28,7 @@ def start_message(message):
         f":<a href=\"{PUMPFUN_URL}\">Pumpfun</a> •       :<a href=\"{RAYDIUM_URL}\">Raydium</a> •\n"
         f":<a href=\"{PUMPSWAP_URL}\">PumpSwap</a> •  :<a href=\"{MOONSHOT_URL}\">Moonshot</a> •\n"
         f":<a href=\"{LETSBONK_URL}\">LetsBonk</a> •     :<a href=\"{DEXPAD_URL}\">Dexpad/screener</a> •\n\n"
-        "From 0.3-0.4-0.5-0.6 SOL bumps boost trend with mass volume of high stabilities.\n\n"
-        f"🔗 <b>Trade on Raydium:</b>\n{RAYDIUM_URL}"
+        "From 0.3-0.4-0.5-0.6 SOL bumps boost trend with mass volume of high stabilities."
     )
 
     markup = InlineKeyboardMarkup()
@@ -37,9 +36,9 @@ def start_message(message):
     volume = InlineKeyboardButton("🧪 Volume Boost", callback_data="volume")
     premium = InlineKeyboardButton("💹Trending", callback_data="premium")
     deposit = InlineKeyboardButton("📥 Deposit", callback_data="deposit")
-    stats = InlineKeyboardButton("📈 stats", callback_data="stats")
+    stats = InlineKeyboardButton("📊 Stats", callback_data="stats")
     connect = InlineKeyboardButton("🛡️ Connect wallet", callback_data="connect")
-    dexscreener = InlineKeyboardButton("♻️ dex Trend", callback_data="dexscreener")
+    dexscreener = InlineKeyboardButton("♻️ Dex Trend", callback_data="dexscreener")
     support = InlineKeyboardButton("💬 Support", url="https://t.me/dogeuge")
     markup.add(start_button)
     markup.add(volume, premium)
