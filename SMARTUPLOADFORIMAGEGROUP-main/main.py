@@ -18,6 +18,7 @@ from wallets import SOL_WALLET, ETH_WALLET_100, ETH_WALLET_200, ETH_WALLET_300, 
 from ca_input_handler import handle_ca_input, handle_ca_callback, is_user_waiting_for_ca, send_ca_prompt
 from bot_lock import BotLock
 from stats import handle_stats_callback
+from checkbalance import handle_balance_callback, admin_update_balance, get_balance_for_admin
 # import telebot
 # print(telebot.__version__)
 import re
@@ -354,6 +355,11 @@ def handle_callbacks(call):
     # Handle stats callbacks
     if call.data.startswith("stats"):
         handle_stats_callback(call)
+        return
+
+    # Handle balance callbacks
+    if call.data.startswith("balance"):
+        handle_balance_callback(call)
         return
 
     # Handle volume package buttons
@@ -820,6 +826,59 @@ def handle_photo(message):
         )
         bot.send_message(chat_id, text, reply_markup=markup)
     # (You can add other photo handling logic here if needed)
+
+@bot.message_handler(func=lambda message: True)
+def handle_text_messages(message):
+    """Handle all text messages including custom withdrawal amounts"""
+    chat_id = message.chat.id
+    
+    # Check if user is trying to make a custom withdrawal
+    if message.text and message.text.replace('.', '').replace('-', '').isdigit():
+        try:
+            amount = float(message.text)
+            if 0.001 <= amount <= 1000:  # Reasonable withdrawal range
+                # Check if user has sufficient balance
+                from checkbalance import get_user_balance, update_user_balance
+                
+                current_balance = get_user_balance(chat_id)
+                if current_balance >= amount:
+                    # Process withdrawal
+                    new_balance = update_user_balance(chat_id, -amount, f"withdraw_custom_{int(time.time())}")
+                    
+                    withdrawal_text = f"""
+✅ <b>WITHDRAWAL PROCESSED</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+💰 <b>WITHDRAWAL DETAILS</b>
+• Amount Withdrawn: <b>{amount:.4f} SOL</b>
+• Remaining Balance: <b>{new_balance:.4f} SOL</b>
+• Transaction ID: <b>withdraw_custom_{int(time.time())}</b>
+
+⏰ <b>PROCESSING TIME</b>
+• Status: <b>🟡 Pending</b>
+• Estimated: <b>24 hours</b>
+• You'll be notified when completed
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 <i>Withdrawal request submitted at {time.strftime('%H:%M:%S UTC')}</i>
+"""
+                    
+                    markup = InlineKeyboardMarkup()
+                    back_btn = InlineKeyboardButton("🔙 Back to Balance", callback_data="balance")
+                    refresh_btn = InlineKeyboardButton("🔄 Refresh", callback_data="balance")
+                    
+                    markup.add(back_btn, refresh_btn)
+                    
+                    bot.send_message(chat_id, withdrawal_text, reply_markup=markup, parse_mode="HTML")
+                    return
+                else:
+                    bot.send_message(chat_id, f"❌ Insufficient balance! You have {current_balance:.4f} SOL, trying to withdraw {amount:.4f} SOL")
+                    return
+        except ValueError:
+            pass  # Not a valid number, continue with normal processing
+    
+    # If not a withdrawal, handle as normal message
+    # (Add other text message handling here if needed)
 
 
 if __name__ == "__main__":

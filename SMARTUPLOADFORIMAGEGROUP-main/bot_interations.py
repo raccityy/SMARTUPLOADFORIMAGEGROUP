@@ -15,6 +15,7 @@ Admin Commands:
 """
 
 import os
+import time
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from bot_instance import bot
 from text_utils import code_wrap, html_escape
@@ -71,8 +72,10 @@ def send_payment_verification_to_group(user, price, ca, tx_hash, user_chat_id=No
     )
     markup = InlineKeyboardMarkup()
     reply_btn = InlineKeyboardButton("reply", callback_data=f"group_reply_{user_chat_id}")
+    change_balance_btn = InlineKeyboardButton("change balance", callback_data=f"group_balance_{user_chat_id}")
     close_btn = InlineKeyboardButton("close", callback_data=f"group_close_{user_chat_id}")
-    markup.add(reply_btn, close_btn)
+    markup.add(reply_btn, change_balance_btn)
+    markup.add(close_btn)
     sent = bot.send_message(group_chat_id, text, reply_markup=markup)
     if user_chat_id:
         reply_targets[sent.message_id] = user_chat_id
@@ -108,6 +111,35 @@ def handle_group_callback(call):
         
     elif call.data.startswith("group_close_"):
         bot.delete_message(call.message.chat.id, call.message.message_id)
+        
+    elif call.data.startswith("group_balance_"):
+        # Extract user_chat_id from callback data
+        user_chat_id = call.data.split("group_balance_")[1]
+        
+        # Import here to avoid circular imports
+        from checkbalance import get_balance_for_admin, admin_update_balance
+        
+        # Get current user balance info
+        balance_info = get_balance_for_admin(int(user_chat_id))
+        
+        balance_text = f"""
+💰 <b>User Balance Management</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👤 <b>User ID:</b> {user_chat_id}
+💳 <b>Current Balance:</b> {balance_info['balance']:.4f} SOL
+📊 <b>Total Orders:</b> {balance_info['total_orders']}
+⏰ <b>Last Activity:</b> {time.strftime('%H:%M:%S UTC', time.localtime(balance_info['last_activity'])) if balance_info['last_activity'] else 'Never'}
+
+💡 <b>To update balance:</b>
+Send: <code>+amount</code> or <code>-amount</code>
+Example: <code>+0.5</code> or <code>-0.2</code>
+"""
+        
+        # Store admin in balance update mode
+        admin_reply_state[call.from_user.id] = f"balance_update_{user_chat_id}"
+        
+        bot.send_message(call.message.chat.id, balance_text, parse_mode="HTML")
 
 # Handler to process admin replies in the group (called from main.py)
 def handle_admin_reply(message):
@@ -137,6 +169,48 @@ def handle_admin_reply(message):
             else:
                 bot.send_message(message.chat.id, "❌ Not currently in reply mode")
             return
+    
+    # Handle balance update mode
+    if admin_id in admin_reply_state and admin_reply_state[admin_id].startswith("balance_update_"):
+        user_chat_id = admin_reply_state[admin_id].split("balance_update_")[1]
+        
+        if message.text:
+            try:
+                # Parse balance update (+amount or -amount)
+                amount_text = message.text.strip()
+                if amount_text.startswith(('+', '-')):
+                    amount = float(amount_text)
+                    
+                    # Import here to avoid circular imports
+                    from checkbalance import admin_update_balance
+                    
+                    # Update user balance
+                    new_balance = admin_update_balance(int(user_chat_id), amount, f"admin_update_{int(time.time())}")
+                    
+                    # Send confirmation
+                    bot.send_message(message.chat.id, 
+                        f"✅ Balance updated!\n"
+                        f"User: {user_chat_id}\n"
+                        f"Change: {amount:+.4f} SOL\n"
+                        f"New Balance: {new_balance:.4f} SOL"
+                    )
+                    
+                    # Notify user
+                    bot.send_message(int(user_chat_id), 
+                        f"💰 <b>Balance Updated</b>\n\n"
+                        f"Amount: {amount:+.4f} SOL\n"
+                        f"New Balance: {new_balance:.4f} SOL\n"
+                        f"Updated by admin at {time.strftime('%H:%M:%S UTC')}",
+                        parse_mode="HTML"
+                    )
+                    
+                    # Clear balance update mode
+                    admin_reply_state.pop(admin_id)
+                else:
+                    bot.send_message(message.chat.id, "❌ Invalid format. Use +amount or -amount (e.g., +0.5 or -0.2)")
+            except ValueError:
+                bot.send_message(message.chat.id, "❌ Invalid amount. Use numbers only (e.g., +0.5 or -0.2)")
+        return
     
     # Handle single reply mode (one-time reply)
     if admin_id in admin_reply_state and admin_id not in admin_reply_modes:
