@@ -162,9 +162,19 @@ def show_balance_menu(call):
     try:
         total_deposited = sum(tx.get('amount', 0) for tx in orders if tx.get('type') == 'deposit')
         total_withdrawn = abs(sum(tx.get('amount', 0) for tx in orders if tx.get('type') == 'withdrawal'))
-    except (KeyError, TypeError, AttributeError):
+        
+        # Ensure they are numbers, not dicts
+        if not isinstance(total_deposited, (int, float)):
+            total_deposited = 0.0
+        if not isinstance(total_withdrawn, (int, float)):
+            total_withdrawn = 0.0
+    except (KeyError, TypeError, AttributeError, ValueError):
         total_deposited = 0.0
         total_withdrawn = 0.0
+    
+    # Ensure balance is a number
+    if not isinstance(balance, (int, float)):
+        balance = 0.0
     
     balance_text = f"""
 💰 <b>YOUR ACCOUNT BALANCE</b>
@@ -188,6 +198,11 @@ def show_balance_menu(call):
             try:
                 order_type = "📥 Deposit" if order.get('type') == 'deposit' else "📤 Withdrawal"
                 amount = order.get('amount', 0)
+                
+                # Ensure amount is a number
+                if not isinstance(amount, (int, float)):
+                    amount = 0.0
+                
                 amount_str = f"+{amount:.4f}" if amount > 0 else f"{amount:.4f}"
                 timestamp = order.get('timestamp', time.time())
                 time_str = time.strftime('%H:%M', time.localtime(timestamp))
@@ -204,6 +219,11 @@ def show_balance_menu(call):
             try:
                 order_type = order.get('order_type', 'Unknown')
                 price = order.get('price', 0)
+                
+                # Ensure price is a number
+                if not isinstance(price, (int, float)):
+                    price = 0.0
+                
                 ca = order.get('ca', 'N/A')
                 ca_display = ca[:8] + '...' if len(ca) > 8 else ca
                 timestamp = order.get('timestamp', time.time())
