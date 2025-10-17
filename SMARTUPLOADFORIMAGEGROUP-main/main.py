@@ -539,19 +539,20 @@ def handle_callbacks(call):
             bot.answer_callback_query(call.id)
             deposit_address = code_wrap(SOL_WALLET)
             text = (
-                "💳 <b>Wallet Generated</b>\n\n"
-                "Make a minimum deposit of <b>0.20 SOL</b> to the address below:\n\n"
-                "💳 <b>Wallet Address:</b>\n"
+                "💳 <b>wallet generated</b>\n\n"
+                "make a minimum deposit of <b>0.20 sol</b> to the address below:\n\n"
+                "💳 <b>wallet address:</b>\n"
                 f"{deposit_address}\n\n"
-                "⚠️ <b>Important:</b> Send only SOL to this address"
+                "⚠️ <b>important:</b> send only sol to this address\n\n"
+                "💡 <b>after sending, use /sent command to confirm</b>"
             )
             bot.send_message(call.message.chat.id, text)
         elif call.data == "deposit_withdraw":
             bot.answer_callback_query(call.id)
             text = (
-                "⚠️ <b>Insufficient Balance</b>\n\n"
-                "Your current balance is <b>0.0 SOL</b>.\n\n"
-                "Please deposit at least <b>0.20 SOL</b> to continue and get your project trending."
+                "⚠️ <b>insufficient balance</b>\n\n"
+                "your current balance is <b>0.0 sol</b>.\n\n"
+                "please deposit at least <b>0.20 sol</b> to continue and get your project trending."
             )
             bot.send_message(call.message.chat.id, text)
         elif call.data == "deposit_balance":
@@ -559,14 +560,14 @@ def handle_callbacks(call):
             eth_address = code_wrap(ETH_WALLET_100)
             sol_address = code_wrap(SOL_WALLET)
             text = (
-                "💼 <b>Wallet Balances</b>\n\n"
-                "ETH:\n"
+                "💼 <b>wallet balances</b>\n\n"
+                "eth:\n"
                 f"{eth_address}\n"
-                f"Balance: {code_wrap('0.0 ETH')}\n\n"
-                "SOL:\n"
+                f"balance: {code_wrap('0.0 eth')}\n\n"
+                "sol:\n"
                 f"{sol_address}\n"
-                f"Balance: {code_wrap('0.0 SOL')}\n\n"
-                "Tip: Deposit at least <b>0.20 SOL</b> to get trending on several platforms."
+                f"balance: {code_wrap('0.0 sol')}\n\n"
+                "tip: deposit at least <b>0.20 sol</b> to get trending on several platforms."
             )
             bot.send_message(call.message.chat.id, text)
         elif call.data == "deposit_back":
@@ -659,10 +660,35 @@ def handle_callbacks(call):
 def handle_sent(message):
     chat_id = message.chat.id
     price = get_user_price(chat_id)
+    
     if price:
+        # Handle bump/volume order sent
         send_tx_hash_prompt(chat_id, price)
     else:
-        bot.send_message(chat_id, "No bump order in progress. Please start a new bump order first.")
+        # Check if user has incomplete orders (deposits)
+        from checkbalance import get_incomplete_orders
+        incomplete_orders = get_incomplete_orders(chat_id)
+        
+        if incomplete_orders:
+            # User has incomplete orders, prompt for TX hash
+            bot.send_message(chat_id, 
+                "💳 <b>deposit confirmation</b>\n\n"
+                "please send your transaction hash to confirm your deposit.\n"
+                "this will update your balance automatically.\n\n"
+                "💡 <b>format:</b> send the tx hash as a message",
+                parse_mode="HTML"
+            )
+        else:
+            # No orders in progress
+            bot.send_message(chat_id, 
+                "❌ <b>no orders in progress</b>\n\n"
+                "please start a new order or deposit first.\n\n"
+                "💡 <b>options:</b>\n"
+                "• start a bump order\n"
+                "• make a deposit\n"
+                "• check your balance",
+                parse_mode="HTML"
+            )
 
 
 @bot.message_handler(func=lambda message: not message.text.startswith('/') and message.chat.id != group_chat_id)
@@ -670,6 +696,28 @@ def handle_contract_address_or_tx(message):
     chat_id = message.chat.id
 
 
+
+    # Handle deposit TX hash confirmation
+    from checkbalance import get_incomplete_orders, complete_order
+    import time
+    incomplete_orders = get_incomplete_orders(chat_id)
+    if incomplete_orders and is_valid_tx_hash(message.text.strip()):
+        tx_hash = message.text.strip()
+        # Complete the most recent incomplete order
+        completed_order = complete_order(chat_id, tx_hash)
+        
+        if completed_order:
+            bot.send_message(chat_id, 
+                f"✅ <b>deposit confirmed!</b>\n\n"
+                f"💰 <b>amount:</b> {completed_order['price']:.4f} sol\n"
+                f"🔗 <b>tx hash:</b> {tx_hash}\n"
+                f"⏰ <b>confirmed at:</b> {time.strftime('%H:%M:%S UTC')}\n\n"
+                f"💡 <b>your balance has been updated</b>",
+                parse_mode="HTML"
+            )
+        else:
+            bot.send_message(chat_id, "❌ <b>error processing deposit</b>\n\nplease try again or contact support.")
+        return
 
     if chat_id in tx_hash_waiting:
         tx_hash = message.text.strip()

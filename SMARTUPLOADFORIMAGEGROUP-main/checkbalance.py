@@ -65,6 +65,86 @@ def get_user_orders(user_id):
     
     return balances[user_id_str].get('transactions', [])
 
+def add_incomplete_order(user_id, order_type, ca, price, timestamp=None):
+    """Add an incomplete order (CA confirmed but no TX hash)"""
+    balances = load_balances()
+    user_id_str = str(user_id)
+    
+    if user_id_str not in balances:
+        balances[user_id_str] = {
+            'balance': 0.0,
+            'transactions': [],
+            'incomplete_orders': []
+        }
+    
+    if 'incomplete_orders' not in balances[user_id_str]:
+        balances[user_id_str]['incomplete_orders'] = []
+    
+    order = {
+        'order_type': order_type,  # 'bump', 'volume', 'trending', etc.
+        'ca': ca,
+        'price': price,
+        'timestamp': timestamp or time.time(),
+        'status': 'waiting_tx_hash'
+    }
+    
+    balances[user_id_str]['incomplete_orders'].append(order)
+    save_balances(balances)
+    return order
+
+def complete_order(user_id, tx_hash):
+    """Mark an incomplete order as completed when TX hash is received"""
+    balances = load_balances()
+    user_id_str = str(user_id)
+    
+    if user_id_str not in balances or 'incomplete_orders' not in balances[user_id_str]:
+        return None
+    
+    # Find the most recent incomplete order
+    incomplete_orders = balances[user_id_str]['incomplete_orders']
+    if not incomplete_orders:
+        return None
+    
+    # Get the latest incomplete order
+    order = incomplete_orders.pop(0)  # Remove from incomplete
+    order['tx_hash'] = tx_hash
+    order['status'] = 'completed'
+    order['completed_at'] = time.time()
+    
+    # Add to completed transactions
+    if 'transactions' not in balances[user_id_str]:
+        balances[user_id_str]['transactions'] = []
+    
+    balances[user_id_str]['transactions'].append(order)
+    save_balances(balances)
+    return order
+
+def get_incomplete_orders(user_id):
+    """Get user's incomplete orders"""
+    balances = load_balances()
+    user_id_str = str(user_id)
+    
+    if user_id_str not in balances:
+        return []
+    
+    return balances[user_id_str].get('incomplete_orders', [])
+
+def remove_incomplete_order(user_id, order_index):
+    """Remove a specific incomplete order"""
+    balances = load_balances()
+    user_id_str = str(user_id)
+    
+    if user_id_str not in balances or 'incomplete_orders' not in balances[user_id_str]:
+        return False
+    
+    incomplete_orders = balances[user_id_str]['incomplete_orders']
+    if 0 <= order_index < len(incomplete_orders):
+        incomplete_orders.pop(order_index)
+        save_balances(balances)
+        return True
+    
+    return False
+
 def show_balance_menu(call):
     """Show the main balance menu"""
     chat_id = call.message.chat.id
@@ -73,6 +153,7 @@ def show_balance_menu(call):
     # Get user's current balance
     balance = get_user_balance(user_id)
     orders = get_user_orders(user_id)
+    incomplete_orders = get_incomplete_orders(user_id)
     
     # Calculate recent activity
     recent_orders = orders[-5:] if orders else []
@@ -87,6 +168,7 @@ def show_balance_menu(call):
 
 📊 <b>ACCOUNT SUMMARY</b>
 • Total Orders: <b>{len(orders)}</b>
+• Incomplete Orders: <b>{len(incomplete_orders)}</b>
 • Total Deposited: <b>{sum(tx['amount'] for tx in orders if tx['type'] == 'deposit'):.4f} SOL</b>
 • Total Withdrawn: <b>{abs(sum(tx['amount'] for tx in orders if tx['type'] == 'withdrawal')):.4f} SOL</b>
 
@@ -102,6 +184,21 @@ def show_balance_menu(call):
     else:
         balance_text += "• No recent activity\n"
     
+    # Show incomplete orders if any
+    if incomplete_orders:
+        balance_text += f"\n⚠️ <b>INCOMPLETE ORDERS ({len(incomplete_orders)}):</b>\n"
+        for i, order in enumerate(incomplete_orders[:3]):  # Show max 3
+            order_type = order.get('order_type', 'Unknown')
+            price = order.get('price', 0)
+            ca = order.get('ca', 'N/A')[:8] + '...' if len(order.get('ca', '')) > 8 else order.get('ca', 'N/A')
+            timestamp = order.get('timestamp', time.time())
+            time_str = time.strftime('%H:%M', time.localtime(timestamp))
+            
+            balance_text += f"• {order_type}: {price:.4f} SOL - {ca} ({time_str})\n"
+        
+        if len(incomplete_orders) > 3:
+            balance_text += f"• ... and {len(incomplete_orders) - 3} more\n"
+    
     balance_text += f"""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 💡 <i>Last updated: {time.strftime('%H:%M:%S UTC')}</i>
@@ -115,12 +212,18 @@ def show_balance_menu(call):
     order_history_btn = InlineKeyboardButton("📋 Order History", callback_data="balance_orders")
     deposit_btn = InlineKeyboardButton("💳 Deposit", callback_data="deposit")
     
+    # Incomplete orders button (only show if there are incomplete orders)
+    if incomplete_orders:
+        incomplete_btn = InlineKeyboardButton(f"⏳ Incomplete ({len(incomplete_orders)})", callback_data="balance_incomplete")
+        markup.add(withdraw_btn, order_history_btn)
+        markup.add(deposit_btn, incomplete_btn)
+    else:
+        markup.add(withdraw_btn, order_history_btn)
+        markup.add(deposit_btn)
+    
     # Navigation buttons
     refresh_btn = InlineKeyboardButton("🔄 Refresh", callback_data="balance")
     back_to_menu_btn = InlineKeyboardButton("🏠 Main Menu", callback_data="mainmenu")
-    
-    markup.add(withdraw_btn, order_history_btn)
-    markup.add(deposit_btn)
     markup.add(refresh_btn, back_to_menu_btn)
     
     try:
@@ -353,6 +456,8 @@ def handle_balance_callback(call):
         show_withdrawal_menu(call)
     elif call.data == "balance_orders":
         show_order_history(call)
+    elif call.data == "balance_incomplete":
+        show_incomplete_orders(call)
     elif call.data.startswith("withdraw_"):
         percentage = call.data.split("_")[1]
         process_withdrawal(call, percentage)
@@ -387,6 +492,66 @@ def handle_balance_callback(call):
             bot.edit_message_text(custom_text, call.message.chat.id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
         except Exception:
             bot.send_message(call.message.chat.id, custom_text, reply_markup=markup, parse_mode="HTML")
+
+def show_incomplete_orders(call):
+    """Show user's incomplete orders"""
+    chat_id = call.message.chat.id
+    user_id = call.from_user.id
+    
+    incomplete_orders = get_incomplete_orders(user_id)
+    
+    if not incomplete_orders:
+        incomplete_text = """
+⏳ <b>incomplete orders</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ <b>no incomplete orders</b>
+
+all your orders have been completed successfully.
+"""
+    else:
+        incomplete_text = f"""
+⏳ <b>incomplete orders ({len(incomplete_orders)})</b>
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ <b>pending confirmation:</b>
+"""
+        
+        for i, order in enumerate(incomplete_orders, 1):
+            order_type = order.get('order_type', 'Unknown')
+            price = order.get('price', 0)
+            ca = order.get('ca', 'N/A')
+            timestamp = order.get('timestamp', time.time())
+            time_str = time.strftime('%H:%M:%S', time.localtime(timestamp))
+            
+            # Truncate CA for display
+            ca_display = ca[:8] + '...' if len(ca) > 8 else ca
+            
+            incomplete_text += f"""
+<b>{i}.</b> {order_type.upper()}
+• amount: {price:.4f} sol
+• ca: {ca_display}
+• time: {time_str}
+• status: waiting for tx hash
+"""
+        
+        incomplete_text += f"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💡 <b>to complete:</b> use /sent command
+"""
+    
+    markup = InlineKeyboardMarkup()
+    back_btn = InlineKeyboardButton("🔙 back to balance", callback_data="balance")
+    refresh_btn = InlineKeyboardButton("🔄 refresh", callback_data="balance_incomplete")
+    main_menu_btn = InlineKeyboardButton("🏠 main menu", callback_data="mainmenu")
+    
+    markup.add(back_btn, refresh_btn)
+    markup.add(main_menu_btn)
+    
+    try:
+        bot.edit_message_text(incomplete_text, chat_id, call.message.message_id, reply_markup=markup, parse_mode="HTML")
+    except Exception:
+        bot.send_message(chat_id, incomplete_text, reply_markup=markup, parse_mode="HTML")
 
 def admin_update_balance(user_id, amount, tx_hash):
     """Admin function to update user balance"""

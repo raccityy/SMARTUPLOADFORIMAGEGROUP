@@ -132,8 +132,12 @@ def handle_group_callback(call):
 ⏰ <b>Last Activity:</b> {time.strftime('%H:%M:%S UTC', time.localtime(balance_info['last_activity'])) if balance_info['last_activity'] else 'Never'}
 
 💡 <b>To update balance:</b>
-Send: <code>+amount</code> or <code>-amount</code>
-Example: <code>+0.5</code> or <code>-0.2</code>
+⚠️ <b>IMPORTANT: Use ONLY NUMBERS!</b>
+✅ <b>Correct:</b> +0.5, -1.2, +10
+❌ <b>Wrong:</b> +abc, -1.2.3, +text
+
+📝 <b>Format:</b> <code>+amount</code> or <code>-amount</code>
+📝 <b>Examples:</b> <code>+0.5</code> or <code>-1.2</code>
 """
         
         # Store admin in balance update mode
@@ -178,38 +182,68 @@ def handle_admin_reply(message):
             try:
                 # Parse balance update (+amount or -amount)
                 amount_text = message.text.strip()
-                if amount_text.startswith(('+', '-')):
-                    amount = float(amount_text)
-                    
-                    # Import here to avoid circular imports
-                    from checkbalance import admin_update_balance
-                    
-                    # Update user balance
-                    new_balance = admin_update_balance(int(user_chat_id), amount, f"admin_update_{int(time.time())}")
-                    
-                    # Send confirmation
+                
+                # Validate format: must start with + or - and contain only numbers and decimal point
+                if amount_text.startswith(('+', '-')) and len(amount_text) > 1:
+                    # Check if the rest is a valid number (only digits and one decimal point)
+                    number_part = amount_text[1:]
+                    if number_part.replace('.', '').isdigit() and number_part.count('.') <= 1:
+                        amount = float(amount_text)
+                        
+                        # Import here to avoid circular imports
+                        from checkbalance import admin_update_balance
+                        
+                        # Update user balance
+                        new_balance = admin_update_balance(int(user_chat_id), amount, f"admin_update_{int(time.time())}")
+                        
+                        # Send confirmation
+                        bot.send_message(message.chat.id, 
+                            f"✅ <b>Balance Updated Successfully!</b>\n\n"
+                            f"👤 <b>User:</b> {user_chat_id}\n"
+                            f"💰 <b>Change:</b> {amount:+.4f} SOL\n"
+                            f"💳 <b>New Balance:</b> {new_balance:.4f} SOL\n\n"
+                            f"⏰ <i>Updated at {time.strftime('%H:%M:%S UTC')}</i>",
+                            parse_mode="HTML"
+                        )
+                        
+                        # Notify user
+                        bot.send_message(int(user_chat_id), 
+                            f"💰 <b>Balance Updated</b>\n\n"
+                            f"Amount: {amount:+.4f} SOL\n"
+                            f"New Balance: {new_balance:.4f} SOL\n"
+                            f"Updated by admin at {time.strftime('%H:%M:%S UTC')}",
+                            parse_mode="HTML"
+                        )
+                        
+                        # Clear balance update mode
+                        admin_reply_state.pop(admin_id)
+                    else:
+                        bot.send_message(message.chat.id, 
+                            "❌ <b>Invalid Format!</b>\n\n"
+                            "Please use <b>ONLY NUMBERS</b> after + or -\n"
+                            "✅ <b>Correct:</b> +0.5, -1.2, +10\n"
+                            "❌ <b>Wrong:</b> +abc, -1.2.3, +text\n\n"
+                            "Example: <code>+0.5</code> or <code>-1.2</code>",
+                            parse_mode="HTML"
+                        )
+                else:
                     bot.send_message(message.chat.id, 
-                        f"✅ Balance updated!\n"
-                        f"User: {user_chat_id}\n"
-                        f"Change: {amount:+.4f} SOL\n"
-                        f"New Balance: {new_balance:.4f} SOL"
-                    )
-                    
-                    # Notify user
-                    bot.send_message(int(user_chat_id), 
-                        f"💰 <b>Balance Updated</b>\n\n"
-                        f"Amount: {amount:+.4f} SOL\n"
-                        f"New Balance: {new_balance:.4f} SOL\n"
-                        f"Updated by admin at {time.strftime('%H:%M:%S UTC')}",
+                        "❌ <b>Invalid Format!</b>\n\n"
+                        "Please use <b>ONLY NUMBERS</b> after + or -\n"
+                        "✅ <b>Correct:</b> +0.5, -1.2, +10\n"
+                        "❌ <b>Wrong:</b> +abc, -1.2.3, +text\n\n"
+                        "Example: <code>+0.5</code> or <code>-1.2</code>",
                         parse_mode="HTML"
                     )
-                    
-                    # Clear balance update mode
-                    admin_reply_state.pop(admin_id)
-                else:
-                    bot.send_message(message.chat.id, "❌ Invalid format. Use +amount or -amount (e.g., +0.5 or -0.2)")
             except ValueError:
-                bot.send_message(message.chat.id, "❌ Invalid amount. Use numbers only (e.g., +0.5 or -0.2)")
+                bot.send_message(message.chat.id, 
+                    "❌ <b>Invalid Amount!</b>\n\n"
+                    "Please use <b>ONLY NUMBERS</b> after + or -\n"
+                    "✅ <b>Correct:</b> +0.5, -1.2, +10\n"
+                    "❌ <b>Wrong:</b> +abc, -1.2.3, +text\n\n"
+                    "Example: <code>+0.5</code> or <code>-1.2</code>",
+                    parse_mode="HTML"
+                )
         return
     
     # Handle single reply mode (one-time reply)
