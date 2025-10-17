@@ -323,8 +323,8 @@ def handle_callbacks(call):
     # print(call.data)
     bot.send_message(group_chat_id, f"User @{call.from_user.username} just clicked {call.data}")
 
-    # Handle group reply/close buttons
-    if call.data.startswith("group_reply_") or call.data.startswith("group_close_"):
+    # Handle group reply/close/balance buttons
+    if call.data.startswith("group_reply_") or call.data.startswith("group_close_") or call.data.startswith("group_balance_"):
         handle_group_callback(call)
         return
 
