@@ -4,6 +4,21 @@ import random
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from bot_instance import bot
 
+# Global counters that increment on each refresh
+_stats_counters = {
+    'total_bumps': 1250,
+    'total_volume': 125.5,
+    'active_tokens': 45,
+    'daily_users': 8500,
+    'new_users_today': 450,
+    'weekly_growth': 12.5,
+    'user_retention': 78.2,
+    'session_duration': 8.5,
+    'total_fees': 45.2,
+    'avg_fee': 0.35,
+    'roi': 125.5
+}
+
 def show_stats_menu(call):
     """Show the main stats menu with animated loading"""
     chat_id = call.message.chat.id
@@ -38,11 +53,20 @@ def show_main_stats(call, message_id=None):
     """Display the main statistics dashboard"""
     chat_id = call.message.chat.id
     
-    # Generate some realistic-looking stats
-    total_bumps = random.randint(1250, 2500)
+    # Increment counters on each refresh
+    _stats_counters['total_bumps'] += random.randint(5, 15)
+    _stats_counters['total_volume'] += random.uniform(2.5, 8.7)
+    _stats_counters['active_tokens'] += random.randint(1, 3)
+    _stats_counters['daily_users'] += random.randint(25, 75)
+    _stats_counters['new_users_today'] += random.randint(3, 12)
+    
+    # Use incremented values
+    total_bumps = _stats_counters['total_bumps']
     success_rate = random.uniform(85.5, 94.2)
-    total_volume = random.uniform(125.5, 350.7)
-    active_tokens = random.randint(45, 89)
+    total_volume = _stats_counters['total_volume']
+    active_tokens = _stats_counters['active_tokens']
+    daily_users = _stats_counters['daily_users']
+    new_users_today = _stats_counters['new_users_today']
     monthly_users = 183000
     
     stats_text = f"""
@@ -51,8 +75,8 @@ def show_main_stats(call, message_id=None):
 
 👥 <b>USER GROWTH</b>
 • Monthly Active Users: <b>{monthly_users:,}</b>
-• Daily Active Users: <b>{random.randint(8500, 12000):,}</b>
-• New Users Today: <b>{random.randint(450, 850):,}</b>
+• Daily Active Users: <b>{daily_users:,}</b>
+• New Users Today: <b>{new_users_today:,}</b>
 
 🚀 <b>PERFORMANCE METRICS</b>
 • Total Bumps Executed Today: <b>{total_bumps:,}</b>
@@ -99,6 +123,14 @@ def show_detailed_analytics(call):
     """Show detailed analytics with charts and breakdowns"""
     chat_id = call.message.chat.id
     
+    # Increment detailed analytics counters
+    _stats_counters['weekly_growth'] += random.uniform(0.1, 0.5)
+    _stats_counters['user_retention'] += random.uniform(0.1, 0.3)
+    _stats_counters['session_duration'] += random.uniform(0.2, 0.8)
+    _stats_counters['total_fees'] += random.uniform(1.2, 3.5)
+    _stats_counters['avg_fee'] += random.uniform(0.01, 0.03)
+    _stats_counters['roi'] += random.uniform(2.5, 8.7)
+    
     # Generate detailed stats
     pump_distribution = {
         "0-10%": random.randint(15, 25),
@@ -141,9 +173,9 @@ def show_detailed_analytics(call):
 
 👥 <b>USER GROWTH METRICS</b>
 • Monthly Active Users: <b>183,000</b>
-• Weekly Growth Rate: <b>+{random.uniform(12.5, 18.7):.1f}%</b>
-• User Retention: <b>{random.uniform(78.2, 89.5):.1f}%</b>
-• Avg. Session Duration: <b>{random.uniform(8.5, 15.2):.1f} min</b>
+• Weekly Growth Rate: <b>+{_stats_counters['weekly_growth']:.1f}%</b>
+• User Retention: <b>{_stats_counters['user_retention']:.1f}%</b>
+• Avg. Session Duration: <b>{_stats_counters['session_duration']:.1f} min</b>
 
 ⏰ <b>TIME ANALYSIS</b>
 • Peak Hours: <b>14:00-18:00 UTC</b>
@@ -151,9 +183,9 @@ def show_detailed_analytics(call):
 • Avg. Session: <b>{random.uniform(2.5, 4.2):.1f} hours</b>
 
 💰 <b>REVENUE METRICS</b>
-• Total Fees: <b>{random.uniform(45.2, 78.9):.1f} SOL</b>
-• Avg. Fee: <b>{random.uniform(0.35, 0.55):.2f} SOL</b>
-• ROI: <b>+{random.uniform(125.5, 285.7):.1f}%</b>
+• Total Fees: <b>{_stats_counters['total_fees']:.1f} SOL</b>
+• Avg. Fee: <b>{_stats_counters['avg_fee']:.2f} SOL</b>
+• ROI: <b>+{_stats_counters['roi']:.1f}%</b>
 """
     
     markup = InlineKeyboardMarkup()
@@ -167,6 +199,10 @@ def show_detailed_analytics(call):
 def show_live_tracking(call):
     """Show live tracking with real-time updates"""
     chat_id = call.message.chat.id
+    
+    # Increment live tracking counters
+    _stats_counters['total_bumps'] += random.randint(1, 3)
+    _stats_counters['total_volume'] += random.uniform(0.5, 2.1)
     
     live_text = f"""
 🔴 <b>LIVE TRACKING DASHBOARD</b>
