@@ -43,13 +43,19 @@ def show_main_stats(call, message_id=None):
     success_rate = random.uniform(85.5, 94.2)
     total_volume = random.uniform(125.5, 350.7)
     active_tokens = random.randint(45, 89)
+    monthly_users = 183000
     
     stats_text = f"""
 📊 <b>PUMPFUN TREND BOT STATISTICS</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+👥 <b>USER GROWTH</b>
+• Monthly Active Users: <b>{monthly_users:,}</b>
+• Daily Active Users: <b>{random.randint(8500, 12000):,}</b>
+• New Users Today: <b>{random.randint(450, 850):,}</b>
+
 🚀 <b>PERFORMANCE METRICS</b>
-• Total Bumps Executed: <b>{total_bumps:,}</b>
+• Total Bumps Executed Today: <b>{total_bumps:,}</b>
 • Success Rate: <b>{success_rate:.1f}%</b>
 • Total Volume Generated: <b>{total_volume:.1f} SOL</b>
 • Active Tokens: <b>{active_tokens}</b>
@@ -132,6 +138,12 @@ def show_detailed_analytics(call):
     
     detailed_text += f"""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👥 <b>USER GROWTH METRICS</b>
+• Monthly Active Users: <b>183,000</b>
+• Weekly Growth Rate: <b>+{random.uniform(12.5, 18.7):.1f}%</b>
+• User Retention: <b>{random.uniform(78.2, 89.5):.1f}%</b>
+• Avg. Session Duration: <b>{random.uniform(8.5, 15.2):.1f} min</b>
 
 ⏰ <b>TIME ANALYSIS</b>
 • Peak Hours: <b>14:00-18:00 UTC</b>
